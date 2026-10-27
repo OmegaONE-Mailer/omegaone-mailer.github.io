@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OmegaONE Mailer — OAuth Certification</title>
+<style>
+:root{color-scheme:dark}body{font:16px system-ui,Arial,sans-serif;background:#101827;color:#f0f4fa;margin:0;padding:32px 16px}main{max-width:660px;margin:auto;background:#1b2739;border:1px solid #41516b;border-radius:14px;padding:26px}h1{font-size:1.5rem;margin:0 0 8px}p{line-height:1.55}label{display:block;margin:22px 0 7px;font-weight:600}input{box-sizing:border-box;width:100%;padding:12px;border:1px solid #8093b1;border-radius:6px;background:#0e1725;color:#fff;font-size:15px}button{border:0;border-radius:7px;padding:12px 16px;background:#85baff;color:#071522;font-weight:700;cursor:pointer;margin:16px 10px 0 0}button:disabled{opacity:.45;cursor:not-allowed}#status{white-space:pre-wrap;overflow-wrap:anywhere;background:#0d1624;border-radius:8px;border:1px solid #394b65;padding:16px;min-height:65px}.small{color:#c4d0e2;font-size:.92rem}code{overflow-wrap:anywhere}a{color:#a7ceff}
+</style>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body><main>
+<h1>OmegaONE Mailer</h1><p>Phase 2 — Google OAuth authentication certification. This test <strong>does not send email</strong> or read your mailbox.</p>
+<p class="small">Expected hosting origin: <code>https://omegaone-mailer.github.io</code></p>
+<label for="client">Google OAuth Web Client ID</label>
+<input id="client" type="text" autocomplete="off" spellcheck="false" placeholder="Paste the Client ID ending in .apps.googleusercontent.com">
+<p class="small">The Client ID is public configuration, not a client secret. It stays in this browser's local storage on this site for convenience. Never paste a client secret.</p>
+<button id="authorize">Authorize Gmail Send</button><button id="clear" type="button">Clear saved ID</button>
+<h2>Certification status</h2><div id="status" role="status" aria-live="polite">Waiting for Client ID.</div>
+<p class="small">Success means Google issued a short-lived access token with the requested <code>gmail.send</code> scope. It does not prove email transmission, which is tested separately. Testing-mode authorization may expire and require reauthorization.</p>
+</main>
+<script>
+(function(){
+'use strict';
+const ORIGIN='https://omegaone-mailer.github.io';
+const SCOPE='https://www.googleapis.com/auth/gmail.send';
+const KEY='OmegaONE.Mailer.OAuthTest.ClientId.v1';
+const client=document.getElementById('client'),status=document.getElementById('status'),authorize=document.getElementById('authorize');
+try{client.value=localStorage.getItem(KEY)||'';}catch(_){}
+function show(message){status.textContent=message;}
+function validId(value){return /^\d+-[a-z0-9_-]+\.apps\.googleusercontent\.com$/i.test(value);}
+authorize.addEventListener('click',function(){
+ const id=client.value.trim();
+ if(location.origin!==ORIGIN){show('NOT CERTIFIED: Open this test from '+ORIGIN+' (not file:// or a different website). Current origin: '+location.origin);return;}
+ if(!validId(id)){show('Enter the full OAuth Web Client ID. It normally begins with numbers and ends in .apps.googleusercontent.com.');return;}
+ if(!window.google||!google.accounts||!google.accounts.oauth2){show('Google Identity Services has not loaded. Check the internet connection, disable blocking extensions for this page, and reload.');return;}
+ try{localStorage.setItem(KEY,id);}catch(_){}
+ let tokenClient;
+ try{tokenClient=google.accounts.oauth2.initTokenClient({client_id:id,scope:SCOPE,callback:function(response){
+  authorize.disabled=false;
+  if(response.error){show('AUTHORIZATION FAILED: '+response.error+(response.error_description?'\n'+response.error_description:''));return;}
+  if(!response.access_token){show('AUTHORIZATION INCOMPLETE: No access token was returned.');return;}
+  const scopes=(response.scope||'').split(/\s+/);
+  if(!scopes.includes(SCOPE)){show('NOT CERTIFIED: An access token was returned, but gmail.send was not confirmed in the granted scopes.');return;}
+  show('PASS — OAuth authorization successful.\nGranted scope: '+SCOPE+'\nToken lifetime: '+(response.expires_in||'not reported')+' seconds\nNo email was sent.\n\nNext gate: Gmail API send/attachment certification.');
+ },error_callback:function(error){authorize.disabled=false;show('AUTHORIZATION WINDOW ERROR: '+(error.type||'Unknown popup error')+'. Check pop-up permissions and retry.');}});
+ authorize.disabled=true;show('Waiting for Google authorization...');tokenClient.requestAccessToken({prompt:'consent'});
+ }catch(err){authorize.disabled=false;show('AUTHORIZATION SETUP ERROR: '+err.message);}
+});
+document.getElementById('clear').addEventListener('click',function(){client.value='';try{localStorage.removeItem(KEY);}catch(_){}show('Saved Client ID cleared.');});
+if(location.origin!==ORIGIN)show('Ready to configure. For certification, this file must be hosted at '+ORIGIN+'. Current origin: '+location.origin);
+})();
+</script>
+</body></html>
