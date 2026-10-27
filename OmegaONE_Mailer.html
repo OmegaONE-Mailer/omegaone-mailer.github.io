@@ -94,16 +94,60 @@
       const count=list().length;
       $('adminProgress').textContent='Ready to send '+d.name+' to '+count+' BCC recipients.';
       adminReport('Attachment and '+count+' recipients received. Google authorization may be required.',true,false);
-      // OAuth popup must be initiated by a gesture on this HTTPS origin.
-      $('adminAuthorize').hidden=false;
-      $('adminAuthorize').onclick=()=>{
+      // Start without another confirmation when an access token is already valid.
+      // If Google requires a gesture, provide only the one authorization button.
+      const authButton=$('adminAuthorize');
+      let started=false;
+      const start=()=>{
+        if(started || sending) return;
         try{
           values();
-          $('adminAuthorize').disabled=true;
-          $('adminProgress').textContent='Authorizing and sending…';
-          if(accessToken && Date.now()<expires) performSend(); else authorizeThenSend();
-        }catch(e){ $('adminAuthorize').disabled=false; adminReport('SEND BLOCKED: '+e.message,false,true); }
+          started=true;
+          authButton.disabled=true;
+          $('adminProgress').textContent='Connecting to Gmail…';
+          if(accessToken && Date.now()<expires){ performSend(); return; }
+          // GIS token popup generally requires a direct gesture. Attempt a
+          // noninteractive grant first; on failure, return to the single button.
+          if(!window.google?.accounts?.oauth2){ throw Error('Google authorization library is unavailable.'); }
+          const tokenClient=google.accounts.oauth2.initTokenClient({
+            client_id:$('client').value.trim(),scope,
+            callback:r=>{
+              if(r.error || !r.access_token){
+                started=false; authButton.disabled=false; authButton.hidden=false;
+                $('adminProgress').textContent='Google authorization is required.';
+                adminReport('Google authorization required. Continue in the secure window.',true,false);
+                return;
+              }
+              accessToken=r.access_token;
+              expires=Date.now()+Math.max(0,(Number(r.expires_in)||3500)-90)*1000;
+              performSend();
+            }
+          });
+          tokenClient.requestAccessToken({prompt:''});
+          // Browsers may silently block a popup initiated without a gesture.
+          setTimeout(()=>{
+            if(started && !sending && (!accessToken || Date.now()>=expires)){
+              started=false; authButton.disabled=false; authButton.hidden=false;
+              $('adminProgress').textContent='Continue to Gmail to authorize sending.';
+            }
+          },2500);
+        }catch(e){
+          started=false;authButton.disabled=false;authButton.hidden=false;
+          $('adminProgress').textContent='Google authorization required.';
+          adminReport('Continue to Gmail in the secure window: '+e.message,true,false);
+        }
       };
+      authButton.onclick=()=>{
+        if(started || sending) return;
+        try{
+          values(); started=true; authButton.disabled=true;
+          $('adminProgress').textContent='Authorizing and sending…';
+          if(accessToken && Date.now()<expires) performSend();
+          else authorizeThenSend();
+        }catch(e){started=false;authButton.disabled=false;adminReport('SEND BLOCKED: '+e.message,false,true);}
+      };
+      // One automatic attempt, then a single Google authorization click only if necessary.
+      start();
     }catch(e){adminReport('SEND BLOCKED: '+e.message,false,true);}
   });
   window.addEventListener('message',event=>{ if(adminMode && window.opener && event.source===window.opener && event.data?.type==='OmegaONE.Mailer.Ping.v2') window.opener.postMessage({type:'OmegaONE.Mailer.Ready.v1'},'*'); });
