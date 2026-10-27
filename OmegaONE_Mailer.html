@@ -67,7 +67,7 @@
     if(done && ok) setTimeout(() => window.close(), 700);
   };
   if(adminMode){
-    const overlay=document.createElement('main'); overlay.id='adminOverlay'; overlay.style='position:fixed;inset:0;background:#101c2c;color:#fff;padding:24px;z-index:9999;font:16px system-ui'; overlay.innerHTML='<h2>Google authorization</h2><p id="adminProgress">Preparing Gmail delivery…</p><button id="adminAuthorize" type="button" hidden>Authorize Google and Send</button>'; document.body.appendChild(overlay);
+    const overlay=document.createElement('main'); overlay.id='adminOverlay'; overlay.style='position:fixed;inset:0;background:#101c2c;color:#fff;padding:24px;z-index:9999;font:16px system-ui'; overlay.innerHTML='<h2>Secure Gmail authorization</h2><p id="adminProgress">Connecting to LLMGold…</p><button id="adminAuthorize" type="button" hidden>Continue to Gmail</button>'; document.body.appendChild(overlay);
   }
   // Accept a customer list only from the LLMGold window that opened this page.
   // Do not transfer OAuth tokens, client secrets or file contents between origins.
