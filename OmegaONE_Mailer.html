@@ -1,18 +1,29 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OmegaONE Mailer — Distribution</title><style>body{font:16px system-ui,Arial;background:#101c2c;color:#f4f7fb;max-width:760px;margin:30px auto;padding:0 18px}h1{font-size:1.55rem}label{display:block;margin:18px 0 6px;font-weight:600}input,textarea,button{font:inherit;box-sizing:border-box}input:not([type=file]),textarea{width:100%;padding:11px;background:#fff;color:#142033;border:1px solid #9baabd;border-radius:6px}textarea{min-height:105px}button{padding:11px 18px;margin:10px 8px 6px 0;border:0;border-radius:6px;background:#3668bc;color:#fff;cursor:pointer}button:disabled{opacity:.5;cursor:default}button.secondary{background:#44546b}.note{color:#bac9dc;font-size:.91rem;line-height:1.5}#status{white-space:pre-wrap;background:#1d3047;padding:14px;border-radius:6px;min-height:60px;overflow-wrap:anywhere}#review{background:#24374c;padding:14px;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere}code{overflow-wrap:anywhere}</style></head><body><h1>OmegaONE Mailer — Distribution</h1><p class="note">Direct browser OAuth + Gmail API. No backend. One message to your Gmail address and the saved BCC distribution list. Choose the exported child HTML file each time. Recipient addresses are private from other BCC recipients.</p><label for="client">Google OAuth Web Client ID</label><input id="client" autocomplete="off" placeholder="...apps.googleusercontent.com"><label for="sender">Your Gmail address (From and To)</label><input id="sender" type="email" placeholder="yourname@gmail.com"><label for="bcc">Customer distribution list — BCC (one email per line)</label><textarea id="bcc" spellcheck="false" placeholder="testrecipient1@example.com&#10;testrecipient2@example.com"></textarea><button class="secondary" id="save" type="button">Save settings on this browser</button><p id="saveStatus" role="status" class="note">Settings not yet saved in this session.</p><p class="note">Settings are saved only in this browser's local storage on this site. Never put customer lists or access tokens in the public GitHub repository. BCC addresses must be different from the sender and each other. Settings remain in this browser only.</p><label for="file">HTML child runtime attachment</label><input id="file" type="file" accept=".html,.htm,text/html"><p class="note">Gmail's overall message size limit applies; MIME/Base64 increases the transmitted size.</p><button id="auth">Authorize Gmail Send</button><button id="reviewBtn">Review Email</button><div id="review" hidden></div><button id="send" disabled>Send Email (confirmation required)</button><h2>Mailer status</h2><div id="status" role="status">Ready. Select child HTML, authorize, review, and send.</div><script src="https://accounts.google.com/gsi/client" async defer></script><script>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OmegaONE Mailer — Production</title><style>body{font:16px system-ui,Arial;background:#101c2c;color:#f4f7fb;max-width:760px;margin:30px auto;padding:0 18px}h1{font-size:1.55rem}label{display:block;margin:18px 0 6px;font-weight:600}input,textarea,button{font:inherit;box-sizing:border-box}input:not([type=file]),textarea{width:100%;padding:11px;background:#fff;color:#142033;border:1px solid #9baabd;border-radius:6px}textarea{min-height:105px}button{padding:11px 18px;margin:10px 8px 6px 0;border:0;border-radius:6px;background:#3668bc;color:#fff;cursor:pointer}button:disabled{opacity:.5;cursor:default}button.secondary{background:#44546b}.note{color:#bac9dc;font-size:.91rem;line-height:1.5}#status{white-space:pre-wrap;background:#1d3047;padding:14px;border-radius:6px;min-height:60px;overflow-wrap:anywhere}#review{background:#24374c;padding:14px;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere}code{overflow-wrap:anywhere}</style></head><body><h1>OmegaONE Mailer — Send Child Lesson</h1><p class="note">Select the exported HTML child runtime and send it to your saved customer list in one Gmail message. Google sign-in appears only when required.</p><details id="advanced"><summary>Mailer account configuration (normally hidden)</summary><label for="client">Google OAuth Web Client ID</label><input id="client" autocomplete="off" placeholder="...apps.googleusercontent.com"><label for="sender">Your Gmail address (From and To)</label><input id="sender" type="email" placeholder="yourname@gmail.com"></details><p id="recipientsSummary" class="note" role="status">Customer recipients: checking saved list…</p><details id="recipientEditor"><summary>Edit customer BCC list</summary><label for="bcc">Customer distribution list — BCC (one email per line)</label><textarea id="bcc" spellcheck="false" placeholder="testrecipient1@example.com&#10;testrecipient2@example.com"></textarea><button class="secondary" id="save" type="button">Save customer list</button><p id="saveStatus" role="status" class="note">Settings not yet saved in this session.</p></details><p class="note">Customer addresses remain in this browser, not in the public GitHub repository. The attachment is selected anew for each send.</p><label for="file">HTML child runtime attachment</label><input id="file" type="file" accept=".html,.htm,text/html"><p class="note">Gmail's overall message size limit applies; MIME/Base64 increases the transmitted size.</p><button id="send" type="button">Send Email</button><div id="review" hidden></div><button id="auth" type="button" hidden>Authorize Gmail Send</button><button id="reviewBtn" type="button" hidden>Review Email</button><h2>Mailer status</h2><div id="status" role="status">Ready. Select the HTML child runtime, then click Send Email.</div><script src="https://accounts.google.com/gsi/client" async defer></script><script>
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
   const scope = 'https://www.googleapis.com/auth/gmail.send';
   const key = 'OmegaONE.BCCCertification.Settings.v1';
-  let accessToken = '', expires = 0, approved = false;
-  const status = message => { $('status').textContent = message; };
+  let accessToken = '', expires = 0, approved = false, sending = false;
+  const status = message => { $('status').textContent = message; if(location.hash==='#admin-send' && window.opener && /^(PASS|SEND FAILED|SEND BLOCKED|Authorization failed)/.test(message)){ try{window.opener.postMessage({type:'OmegaONE.Mailer.Status.v2',message,ok:message.startsWith('PASS'),done:true},'*');}catch(_){} if(message.startsWith('PASS')) setTimeout(()=>window.close(),900); } };
   const saveStatus = message => { $('saveStatus').textContent = message; };
   const list = () => $('bcc').value.split(/[\n,;]+/).map(x => x.trim()).filter(Boolean);
   const validEmail = x => /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(x);
+  const updateRecipientSummary = () => {
+    const recipients = list();
+    $('recipientsSummary').textContent = recipients.length
+      ? 'BCC recipients: ' + recipients.length + ' (maintained in LLMGold Admin; expand to edit here)'
+      : 'No BCC recipients saved. Expand Edit customer BCC list to add them.';
+  };
+  const updateSendState = () => {
+    const file = $('file').files && $('file').files[0];
+    $('send').disabled = sending || !file || !/\.html?$/i.test(file.name);
+  };
   const invalidate = () => {
     approved = false;
-    $('send').disabled = true;
     $('review').hidden = true;
+    updateSendState();
+    updateRecipientSummary();
   };
   try {
     const saved = JSON.parse(localStorage.getItem(key) || '{}');
@@ -23,6 +34,8 @@
   } catch (error) {
     saveStatus('Saved settings could not be loaded: ' + error.message);
   }
+  updateSendState();
+  updateRecipientSummary();
   for (const field of ['client', 'sender', 'bcc', 'file']) {
     $(field).addEventListener('input', invalidate);
     $(field).addEventListener('change', invalidate);
@@ -38,12 +51,70 @@
       const check = JSON.parse(localStorage.getItem(key) || '{}');
       if (JSON.stringify(check) !== JSON.stringify(data)) throw new Error('Stored data did not match.');
       saveStatus('SAVED — settings verified in this browser (' + list().length + ' BCC addresses).');
+      updateRecipientSummary();
       status('Settings saved successfully. The attachment is not stored and must be selected for each send.');
     } catch (error) {
       saveStatus('SAVE FAILED — ' + error.message);
       status('Settings could not be saved: ' + error.message);
     }
   });
+  // Admin send mode: keep the Mailer UI hidden; Google may require a user gesture.
+  const adminMode = location.hash === '#admin-send';
+  let adminPending = false;
+  const adminReport = (message, ok=false, done=false) => {
+    if(!adminMode || !window.opener) return;
+    try { window.opener.postMessage({type:'OmegaONE.Mailer.Status.v2',message,ok,done}, '*'); } catch(_) {}
+    if(done && ok) setTimeout(() => window.close(), 700);
+  };
+  if(adminMode){
+    const overlay=document.createElement('main'); overlay.id='adminOverlay'; overlay.style='position:fixed;inset:0;background:#101c2c;color:#fff;padding:24px;z-index:9999;font:16px system-ui'; overlay.innerHTML='<h2>Google authorization</h2><p id="adminProgress">Preparing Gmail delivery…</p><button id="adminAuthorize" type="button" hidden>Authorize Google and Send</button>'; document.body.appendChild(overlay);
+  }
+  // Accept a customer list only from the LLMGold window that opened this page.
+  // Do not transfer OAuth tokens, client secrets or file contents between origins.
+  window.addEventListener('message', event => {
+    if (!window.opener || event.source !== window.opener) return;
+    const data = event.data;
+    if (!data || data.type !== 'OmegaONE.Mailer.AdminList.v1' || typeof data.bcc !== 'string') return;
+    $('bcc').value = data.bcc;
+    invalidate();
+    $('save').click();
+    status('Customer list received from LLMGold Admin. Select an HTML child runtime and click Send Email.');
+  });
+  window.addEventListener('message', async event => {
+    if(!adminMode || !window.opener || event.source!==window.opener || !event.data || event.data.type!=='OmegaONE.Mailer.AdminSend.v2') return;
+    try{
+      const d=event.data;
+      if(!(d.bytes instanceof ArrayBuffer) || !/\.html?$/i.test(d.name||'')) throw Error('Invalid HTML attachment.');
+      $('bcc').value=String(d.bcc||'');
+      if(d.sender) $('sender').value=String(d.sender);
+      const transfer=new DataTransfer(); transfer.items.add(new File([d.bytes],d.name,{type:'text/html'}));
+      $('file').files=transfer.files;
+      $('save').click(); updateSendState();
+      adminPending=true;
+      const count=list().length;
+      $('adminProgress').textContent='Ready to send '+d.name+' to '+count+' BCC recipients.';
+      adminReport('Attachment and '+count+' recipients received. Google authorization may be required.',true,false);
+      // OAuth popup must be initiated by a gesture on this HTTPS origin.
+      $('adminAuthorize').hidden=false;
+      $('adminAuthorize').onclick=()=>{
+        try{
+          values();
+          $('adminAuthorize').disabled=true;
+          $('adminProgress').textContent='Authorizing and sending…';
+          if(accessToken && Date.now()<expires) performSend(); else authorizeThenSend();
+        }catch(e){ $('adminAuthorize').disabled=false; adminReport('SEND BLOCKED: '+e.message,false,true); }
+      };
+    }catch(e){adminReport('SEND BLOCKED: '+e.message,false,true);}
+  });
+  window.addEventListener('message',event=>{ if(adminMode && window.opener && event.source===window.opener && event.data?.type==='OmegaONE.Mailer.Ping.v2') window.opener.postMessage({type:'OmegaONE.Mailer.Ready.v1'},'*'); });
+  // The opener sends its list only after this HTTPS page signals readiness.
+  if (window.opener) {
+    try { window.opener.postMessage({type:'OmegaONE.Mailer.Ready.v1'}, '*'); } catch (error) {}
+  }
+  // Auto-save customer list changes locally; no extra Save click is necessary.
+  $('bcc').addEventListener('change', () => $('save').click());
+  $('sender').addEventListener('change', () => $('save').click());
+  $('client').addEventListener('change', () => $('save').click());
   function values() {
     const client = $('client').value.trim();
     const sender = $('sender').value.trim();
@@ -58,25 +129,26 @@
     if (!file || !/\.html?$/i.test(file.name)) throw Error('Select an HTML attachment.');
     return { client, sender, bcc, file };
   }
-  $('auth').addEventListener('click', () => {
-    try {
-      const client = $('client').value.trim();
-      if (!client.endsWith('.apps.googleusercontent.com')) throw Error('Enter your OAuth Web Client ID first.');
-      if (!window.google?.accounts?.oauth2) throw Error('Google Identity Services has not loaded. Check connectivity and retry.');
-      const tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: client,
-        scope,
-        callback: response => {
-          if (response.error) { status('OAuth error: ' + JSON.stringify(response)); return; }
-          accessToken = response.access_token;
-          expires = Date.now() + ((response.expires_in || 3500) - 60) * 1000;
-          status('PASS — Gmail Send authorization granted. Token expires in approximately ' + Math.floor((expires - Date.now()) / 60000) + ' minutes. No email sent.');
+  function authorizeThenSend() {
+    const client = $('client').value.trim();
+    if (!client.endsWith('.apps.googleusercontent.com')) throw Error('Configure the OAuth Web Client ID under Mailer account configuration.');
+    if (!window.google?.accounts?.oauth2) throw Error('Google Identity Services has not loaded. Check connectivity and retry.');
+    status('Google authorization required. Complete the Google popup to continue sending.');
+    const tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: client,
+      scope,
+      callback: response => {
+        if (response.error || !response.access_token) {
+          status('Authorization failed: ' + JSON.stringify(response));
+          return;
         }
-      });
-      tokenClient.requestAccessToken({ prompt: 'consent' });
-      status('Complete Google authorization in the popup.');
-    } catch (error) { status(error.message); }
-  });
+        accessToken = response.access_token;
+        expires = Date.now() + Math.max(0, (Number(response.expires_in) || 3500) - 90) * 1000;
+        performSend();
+      }
+    });
+    tokenClient.requestAccessToken({prompt: accessToken ? '' : 'consent'});
+  }
   $('reviewBtn').addEventListener('click', () => {
     try {
       const { sender, bcc, file } = values();
@@ -84,7 +156,7 @@
       $('review').hidden = false;
       $('review').textContent = 'FROM: ' + sender + '\nTO: ' + sender + '\nBCC (' + bcc.length + '): ' + bcc.join(', ') + '\nSUBJECT: OmegaONE Mailer\nATTACHMENT: ' + file.name + ' (' + file.size.toLocaleString() + ' bytes)\n\nThis will send one REAL email to the BCC distribution list. Verify all addresses before continuing.';
       approved = true;
-      $('send').disabled = false;
+      updateSendState();
       status('Review the addresses above. Click Send only when correct.');
     } catch (error) { status('Review blocked: ' + error.message); }
   });
@@ -97,12 +169,12 @@
   const header = str => '=?UTF-8?B?' + utf8b64(str) + '?=';
   const safeAddress = str => str.replace(/[\r\n]/g, '');
   const foldB64 = str => str.match(/.{1,76}/g)?.join('\r\n') || '';
-  $('send').addEventListener('click', async () => {
-    if (!approved) return;
+  async function performSend() {
+    if (sending) return;
     try {
       const { sender, bcc, file } = values();
-      if (!accessToken || Date.now() > expires) throw Error('OAuth token expired. Authorize again.');
-      if (!confirm('Send one REAL email to ' + sender + ' with ' + bcc.length + ' BCC recipients and attachment ' + file.name + '?')) return;
+      if (!accessToken || Date.now() > expires) throw Error('Google authorization expired. Click Send Email again.');
+      sending = true;
       $('send').disabled = true;
       status('Preparing attachment and sending. Please wait…');
       const bytes = new Uint8Array(await file.arrayBuffer());
@@ -139,7 +211,21 @@
       approved = false;
     } catch (error) {
       status('SEND FAILED: ' + error.message);
-      $('send').disabled = false;
+    } finally {
+      sending = false;
+      updateSendState();
+    }
+  }
+  $('send').addEventListener('click', () => {
+    if (sending) return;
+    try {
+      const {sender, bcc, file} = values();
+      if (!confirm('Send one REAL email\n\nTo: ' + sender + '\nBCC recipients (' + bcc.length + '): ' + bcc.join(', ') + '\nAttachment: ' + file.name + ' (' + file.size.toLocaleString() + ' bytes)\n\nProceed?')) return;
+      if (accessToken && Date.now() < expires) performSend();
+      else authorizeThenSend();
+    } catch (error) {
+      if (/BCC|sender|Client ID/i.test(error.message)) { $('recipientEditor').open = true; $('advanced').open = true; }
+      status('SEND BLOCKED: ' + error.message);
     }
   });
 })();
