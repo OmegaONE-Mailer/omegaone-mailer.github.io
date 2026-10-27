@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>OmegaONE Gmail Attachment Certification</title>
+<style>body{font:16px system-ui,Arial,sans-serif;max-width:760px;margin:32px auto;padding:0 18px;background:#f7f9fc;color:#17253a}main{background:white;border:1px solid #cbd5e1;border-radius:12px;padding:25px}label{display:block;font-weight:600;margin-top:18px}input[type=text],input[type=email],input[type=file]{width:100%;box-sizing:border-box;padding:11px;margin-top:7px;border:1px solid #9aa9bb;border-radius:6px;font:inherit}button{padding:12px 18px;margin:15px 8px 0 0;border:0;border-radius:6px;background:#164a8a;color:white;font:inherit;cursor:pointer}button:disabled{background:#98a6b8;cursor:not-allowed}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#edf2f7;padding:15px;border-radius:6px;min-height:65px}.hint{color:#48586c;font-size:14px}h1{font-size:24px}</style>
+<script src="https://accounts.google.com/gsi/client" async defer></script></head><body><main>
+<h1>OmegaONE Gmail API — Attachment Certification</h1><p>Send one selected HTML file to your own Gmail address. No BCC recipients. No backend. No email is sent until you click <strong>Send Test Email</strong>.</p>
+<label for="client">OAuth Web Client ID</label><input id="client" type="text" placeholder="...apps.googleusercontent.com" autocomplete="off" spellcheck="false">
+<label for="recipient">Your Gmail address (To and From)</label><input id="recipient" type="email" placeholder="yourname@gmail.com" autocomplete="email">
+<label for="attachment">Select exported HTML child file</label><input id="attachment" type="file" accept=".html,.htm,text/html">
+<p class="hint">This test uses only the Gmail send scope. The selected file is processed locally and transmitted as an email attachment directly to Gmail API. Maximum test file size: 10 MB.</p>
+<button id="authorize" type="button">Authorize Gmail Send</button><button id="send" type="button" disabled>Send Test Email</button>
+<h2>Certification status</h2><pre id="status" role="status" aria-live="polite">READY — Enter Client ID and Gmail address, choose an HTML file, then authorize.</pre>
+<p class="hint">A successful Gmail API response proves Google accepted the message for sending. Confirm delivery and attachment integrity by opening the message in your Gmail inbox.</p>
+</main><script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id);let token='',tokenExpiry=0,tokenClient=null,busy=false;
+const status=s=>{$('status').textContent=s};const validClient=()=>/^[0-9]+-[a-zA-Z0-9_-]+\.apps\.googleusercontent\.com$/.test($('client').value.trim());
+const validEmail=e=>/^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(e);
+const canSend=()=>{const f=$('attachment').files[0];$('send').disabled=busy||!token||Date.now()>=tokenExpiry||!validEmail($('recipient').value.trim())||!f||f.size>10*1024*1024||!/\.html?$/i.test(f.name)};
+$('recipient').addEventListener('input',canSend);$('attachment').addEventListener('change',canSend);
+$('authorize').onclick=()=>{if(!validClient()){status('ERROR — Paste the full OAuth Web Client ID ending in .apps.googleusercontent.com.');return}if(!window.google?.accounts?.oauth2){status('ERROR — Google Identity Services has not loaded. Check your connection and refresh.');return}
+ tokenClient=google.accounts.oauth2.initTokenClient({client_id:$('client').value.trim(),scope:'https://www.googleapis.com/auth/gmail.send',callback:response=>{if(response.error||!response.access_token){status('ERROR — OAuth authorization failed: '+(response.error_description||response.error||'No token returned'));return}token=response.access_token;tokenExpiry=Date.now()+Math.max(0,(Number(response.expires_in)||3600)-60)*1000;status('PASS — OAuth authorization successful.\nGranted scope: '+(response.scope||'gmail.send')+'\nNo email sent yet. Select a file and click Send Test Email.');canSend()},error_callback:e=>status('ERROR — Google authorization window failed: '+(e.type||'unknown'))});tokenClient.requestAccessToken({prompt:'consent'});
+};
+function encodeUtf8(s){return new TextEncoder().encode(s)}
+function b64(bytes){let binary='';const chunk=0x8000;for(let i=0;i<bytes.length;i+=chunk){binary+=String.fromCharCode(...bytes.subarray(i,i+chunk))}return btoa(binary)}
+function b64url(bytes){return b64(bytes).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function foldBase64(s){return s.match(/.{1,76}/g)?.join('\r\n')||''}
+function safeFilename(name){return name.replace(/[\r\n"\\]/g,'_')}
+$('send').onclick=async()=>{const email=$('recipient').value.trim(),f=$('attachment').files[0];if(!token||Date.now()>=tokenExpiry){status('ERROR — Token expired. Authorize again.');canSend();return}if(!validEmail(email)||!f||f.size>10*1024*1024||!/\.html?$/i.test(f.name)){status('ERROR — Enter a valid email and select an HTML file under 10 MB.');return}
+ if(!confirm('Send '+f.name+' ('+f.size.toLocaleString()+' bytes) to '+email+' via Gmail API?'))return;
+ busy=true;canSend();status('SENDING — Building MIME message and uploading to Gmail API...');try{
+ const boundary='omegaone_'+Date.now()+'_'+Math.random().toString(36).slice(2);const bytes=new Uint8Array(await f.arrayBuffer());const fileBase64=foldBase64(b64(bytes));const subject='OmegaONE attachment certification — '+new Date().toISOString();
+ const mime=['To: '+email,'Subject: '+subject,'MIME-Version: 1.0','Content-Type: multipart/mixed; boundary="'+boundary+'"','','--'+boundary,'Content-Type: text/plain; charset=UTF-8','Content-Transfer-Encoding: 8bit','','OmegaONE Gmail API attachment certification. Verify that the attached HTML file opens and matches the selected file.','','--'+boundary,'Content-Type: text/html; name="'+safeFilename(f.name)+'"','Content-Disposition: attachment; filename="'+safeFilename(f.name)+'"','Content-Transfer-Encoding: base64','',fileBase64,'--'+boundary+'--',''].join('\r\n');
+ const r=await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({raw:b64url(encodeUtf8(mime))})});const data=await r.json().catch(()=>({}));if(!r.ok){throw Error('HTTP '+r.status+' — '+(data.error?.message||JSON.stringify(data)))}
+ status('PASS — Gmail API accepted the test email.\nMessage ID: '+(data.id||'(not returned)')+'\nFile: '+f.name+'\nFile size: '+f.size+' bytes\nRecipient: '+email+'\n\nFINAL CHECK REQUIRED: Open Gmail and confirm the message arrived with an intact HTML attachment.');
+ }catch(e){status('FAIL — Gmail API send did not complete.\n'+e.message+'\n\nIf this is a 401 error, authorize again. If it is 403, verify Gmail API access and permissions.')}finally{busy=false;canSend()}
+};
+})();
+</script></body></html>
