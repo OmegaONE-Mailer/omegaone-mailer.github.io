@@ -1,8 +1,11 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OmegaONE Mailer — Hands-Free Trial V4</title><style>body{font:16px system-ui,Arial;background:#101c2c;color:#f4f7fb;max-width:760px;margin:30px auto;padding:0 18px}h1{font-size:1.55rem}label{display:block;margin:18px 0 6px;font-weight:600}input,textarea,button{font:inherit;box-sizing:border-box}input:not([type=file]),textarea{width:100%;padding:11px;background:#fff;color:#142033;border:1px solid #9baabd;border-radius:6px}textarea{min-height:105px}button{padding:11px 18px;margin:10px 8px 6px 0;border:0;border-radius:6px;background:#3668bc;color:#fff;cursor:pointer}button:disabled{opacity:.5;cursor:default}button.secondary{background:#44546b}.note{color:#bac9dc;font-size:.91rem;line-height:1.5}#status{white-space:pre-wrap;background:#1d3047;padding:14px;border-radius:6px;min-height:60px;overflow-wrap:anywhere}#review{background:#24374c;padding:14px;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere}code{overflow-wrap:anywhere}</style></head><body><h1>OmegaONE Mailer — Send Child Lesson</h1><p class="note">Select the exported HTML child runtime and send it to your saved customer list in one Gmail message. Google sign-in appears only when required.</p><details id="advanced"><summary>Mailer account configuration (normally hidden)</summary><label for="client">Google OAuth Web Client ID</label><input id="client" autocomplete="off" placeholder="...apps.googleusercontent.com"><label for="sender">Your Gmail address (From and To)</label><input id="sender" type="email" placeholder="yourname@gmail.com"></details><p id="recipientsSummary" class="note" role="status">Customer recipients: checking saved list…</p><details id="recipientEditor"><summary>Edit customer BCC list</summary><label for="bcc">Customer distribution list — BCC (one email per line)</label><textarea id="bcc" spellcheck="false" placeholder="testrecipient1@example.com&#10;testrecipient2@example.com"></textarea><button class="secondary" id="save" type="button">Save customer list</button><p id="saveStatus" role="status" class="note">Settings not yet saved in this session.</p></details><p class="note">Customer addresses remain in this browser, not in the public GitHub repository. The attachment is selected anew for each send.</p><label for="file">HTML child runtime attachment</label><input id="file" type="file" accept=".html,.htm,text/html"><p class="note">Gmail's overall message size limit applies; MIME/Base64 increases the transmitted size.</p><button id="send" type="button">Send Email</button><div id="review" hidden></div><button id="auth" type="button" hidden>Authorize Gmail Send</button><button id="reviewBtn" type="button" hidden>Review Email</button><h2>Mailer status</h2><div id="status" role="status">Ready. Select the HTML child runtime, then click Send Email.</div><script src="https://accounts.google.com/gsi/client" async defer></script><script>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OmegaONE Mailer — Hands-Free Trial V4.1</title><style>body{font:16px system-ui,Arial;background:#101c2c;color:#f4f7fb;max-width:760px;margin:30px auto;padding:0 18px}h1{font-size:1.55rem}label{display:block;margin:18px 0 6px;font-weight:600}input,textarea,button{font:inherit;box-sizing:border-box}input:not([type=file]),textarea{width:100%;padding:11px;background:#fff;color:#142033;border:1px solid #9baabd;border-radius:6px}textarea{min-height:105px}button{padding:11px 18px;margin:10px 8px 6px 0;border:0;border-radius:6px;background:#3668bc;color:#fff;cursor:pointer}button:disabled{opacity:.5;cursor:default}button.secondary{background:#44546b}.note{color:#bac9dc;font-size:.91rem;line-height:1.5}#status{white-space:pre-wrap;background:#1d3047;padding:14px;border-radius:6px;min-height:60px;overflow-wrap:anywhere}#review{background:#24374c;padding:14px;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere}code{overflow-wrap:anywhere}</style></head><body><h1>OmegaONE Mailer — Send Child Lesson</h1><p class="note">Select the exported HTML child runtime and send it to your saved customer list in one Gmail message. Google sign-in appears only when required.</p><details id="advanced"><summary>Mailer account configuration (normally hidden)</summary><label for="client">Google OAuth Web Client ID</label><input id="client" autocomplete="off" placeholder="...apps.googleusercontent.com"><label for="sender">Your Gmail address (From and To)</label><input id="sender" type="email" placeholder="yourname@gmail.com"></details><p id="recipientsSummary" class="note" role="status">Customer recipients: checking saved list…</p><details id="recipientEditor"><summary>Edit customer BCC list</summary><label for="bcc">Customer distribution list — BCC (one email per line)</label><textarea id="bcc" spellcheck="false" placeholder="testrecipient1@example.com&#10;testrecipient2@example.com"></textarea><button class="secondary" id="save" type="button">Save customer list</button><p id="saveStatus" role="status" class="note">Settings not yet saved in this session.</p></details><p class="note">Customer addresses remain in this browser, not in the public GitHub repository. The attachment is selected anew for each send.</p><label for="file">HTML child runtime attachment</label><input id="file" type="file" accept=".html,.htm,text/html"><p class="note">Gmail's overall message size limit applies; MIME/Base64 increases the transmitted size.</p><button id="send" type="button">Send Email</button><div id="review" hidden></div><button id="auth" type="button" hidden>Authorize Gmail Send</button><button id="reviewBtn" type="button" hidden>Review Email</button><h2>Mailer status</h2><div id="status" role="status">Ready. Select the HTML child runtime, then click Send Email.</div><script src="https://accounts.google.com/gsi/client" async defer></script><script>
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
   const scope = 'https://www.googleapis.com/auth/gmail.send';
+  // The DistributionUtility is a local HTML file (opaque origin: null).
+  const trustedHandoffOrigin = origin => origin === 'null';
+  const trustedHandoff = event => !!window.opener && event.source === window.opener && trustedHandoffOrigin(event.origin);
   const key = 'OmegaONE.BCCCertification.Settings.v1';
   let accessToken = '', expires = 0, approved = false, sending = false;
    let adminEmailSubject = null, adminEmailBody = null;
@@ -73,7 +76,7 @@
   // Accept a customer list only from the application window that opened this page.
   // Do not transfer OAuth tokens, client secrets or file contents between origins.
   window.addEventListener('message', event => {
-    if (!window.opener || event.source !== window.opener) return;
+    if (!trustedHandoff(event)) return;
     const data = event.data;
     if (!data || data.type !== 'OmegaONE.Mailer.AdminList.v1' || typeof data.bcc !== 'string') return;
     $('bcc').value = data.bcc;
@@ -82,7 +85,7 @@
     status('Customer list received from DistributionUtility. Select an HTML child runtime and click Send Email.');
   });
   window.addEventListener('message', async event => {
-    if(!adminMode || !window.opener || event.source!==window.opener || !event.data || event.data.type!=='OmegaONE.Mailer.AdminSend.v2') return;
+    if(!adminMode || !trustedHandoff(event) || !event.data || event.data.type!=='OmegaONE.Mailer.AdminSend.v2') return;
     try{
       const d=event.data;
       adminEmailSubject = typeof d.subject === 'string' ? d.subject : null;
@@ -159,7 +162,7 @@
       start();
     }catch(e){adminReport('SEND BLOCKED: '+e.message,false,true);}
   });
-  window.addEventListener('message',event=>{ if(adminMode && window.opener && event.source===window.opener && event.data?.type==='OmegaONE.Mailer.Ping.v2') window.opener.postMessage({type:'OmegaONE.Mailer.Ready.v1'},'*'); });
+  window.addEventListener('message',event=>{ if(adminMode && trustedHandoff(event) && event.data?.type==='OmegaONE.Mailer.Ping.v2') window.opener.postMessage({type:'OmegaONE.Mailer.Ready.v1'},'*'); });
   // The opener sends its list only after this HTTPS page signals readiness.
   if (window.opener) {
     try { window.opener.postMessage({type:'OmegaONE.Mailer.Ready.v1'}, '*'); } catch (error) {}
@@ -200,7 +203,7 @@
         performSend();
       }
     });
-    tokenClient.requestAccessToken({prompt: accessToken ? '' : 'consent'});
+    tokenClient.requestAccessToken({prompt: ''});
   }
   $('reviewBtn').addEventListener('click', () => {
     try {
