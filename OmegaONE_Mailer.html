@@ -85,6 +85,8 @@
     if(!adminMode || !window.opener || event.source!==window.opener || !event.data || event.data.type!=='OmegaONE.Mailer.AdminSend.v2') return;
     try{
       const d=event.data;
+      adminEmailSubject = typeof d.subject === 'string' ? d.subject : null;
+      adminEmailBody = typeof d.body === 'string' ? d.body : null;
       if(!(d.bytes instanceof ArrayBuffer) || !/\.html?$/i.test(d.name||'')) throw Error('Invalid HTML attachment.');
       $('bcc').value=String(d.bcc||'');
       if(d.sender) $('sender').value=String(d.sender);
