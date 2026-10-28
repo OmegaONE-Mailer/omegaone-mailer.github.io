@@ -5,6 +5,7 @@
   const scope = 'https://www.googleapis.com/auth/gmail.send';
   const key = 'OmegaONE.BCCCertification.Settings.v1';
   let accessToken = '', expires = 0, approved = false, sending = false;
+   let adminEmailSubject = null, adminEmailBody = null;
   const status = message => { $('status').textContent = message; if(location.hash==='#admin-send' && window.opener && /^(PASS|SEND FAILED|SEND BLOCKED|Authorization failed)/.test(message)){ try{window.opener.postMessage({type:'OmegaONE.Mailer.Status.v2',message,ok:message.startsWith('PASS'),done:true},'*');}catch(_){} if(message.startsWith('PASS')) setTimeout(()=>window.close(),900); } };
   const saveStatus = message => { $('saveStatus').textContent = message; };
   const list = () => $('bcc').value.split(/[\n,;]+/).map(x => x.trim()).filter(Boolean);
@@ -223,7 +224,8 @@
       status('Preparing attachment and sending. Please wait…');
       const bytes = new Uint8Array(await file.arrayBuffer());
       const boundary = 'omegaone_' + Math.random().toString(36).slice(2);
-      const subject = 'OmegaONE Child Lesson — ' + new Date().toISOString();
+      const subject = adminEmailSubject !== null ? adminEmailSubject : 'OmegaONE Child Lesson — ' + new Date().toISOString();
+       const messageText = adminEmailBody !== null ? adminEmailBody : 'OmegaONE child lesson attached. Download the HTML file and open it in Chrome.';
       const lines = [
         'From: ' + safeAddress(sender),
         'To: ' + safeAddress(sender),
@@ -234,7 +236,7 @@
         '', '--' + boundary,
         'Content-Type: text/plain; charset=UTF-8',
         'Content-Transfer-Encoding: base64',
-        '', utf8b64('OmegaONE child lesson attached. Download the HTML file and open it in Chrome.'),
+        '', utf8b64(messageText),
         '--' + boundary,
         'Content-Type: text/html; name="' + encodeURIComponent(file.name) + '"',
         "Content-Disposition: attachment; filename*=UTF-8''" + encodeURIComponent(file.name),
