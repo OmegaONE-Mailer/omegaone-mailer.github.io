@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OmegaONE Mailer — Production</title><style>body{font:16px system-ui,Arial;background:#101c2c;color:#f4f7fb;max-width:760px;margin:30px auto;padding:0 18px}h1{font-size:1.55rem}label{display:block;margin:18px 0 6px;font-weight:600}input,textarea,button{font:inherit;box-sizing:border-box}input:not([type=file]),textarea{width:100%;padding:11px;background:#fff;color:#142033;border:1px solid #9baabd;border-radius:6px}textarea{min-height:105px}button{padding:11px 18px;margin:10px 8px 6px 0;border:0;border-radius:6px;background:#3668bc;color:#fff;cursor:pointer}button:disabled{opacity:.5;cursor:default}button.secondary{background:#44546b}.note{color:#bac9dc;font-size:.91rem;line-height:1.5}#status{white-space:pre-wrap;background:#1d3047;padding:14px;border-radius:6px;min-height:60px;overflow-wrap:anywhere}#review{background:#24374c;padding:14px;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere}code{overflow-wrap:anywhere}</style></head><body><h1>OmegaONE Mailer — Send Child Lesson</h1><p class="note">Select the exported HTML child runtime and send it to your saved customer list in one Gmail message. Google sign-in appears only when required.</p><details id="advanced"><summary>Mailer account configuration (normally hidden)</summary><label for="client">Google OAuth Web Client ID</label><input id="client" autocomplete="off" placeholder="...apps.googleusercontent.com"><label for="sender">Your Gmail address (From and To)</label><input id="sender" type="email" placeholder="yourname@gmail.com"></details><p id="recipientsSummary" class="note" role="status">Customer recipients: checking saved list…</p><details id="recipientEditor"><summary>Edit customer BCC list</summary><label for="bcc">Customer distribution list — BCC (one email per line)</label><textarea id="bcc" spellcheck="false" placeholder="testrecipient1@example.com&#10;testrecipient2@example.com"></textarea><button class="secondary" id="save" type="button">Save customer list</button><p id="saveStatus" role="status" class="note">Settings not yet saved in this session.</p></details><p class="note">Customer addresses remain in this browser, not in the public GitHub repository. The attachment is selected anew for each send.</p><label for="file">HTML child runtime attachment</label><input id="file" type="file" accept=".html,.htm,text/html"><p class="note">Gmail's overall message size limit applies; MIME/Base64 increases the transmitted size.</p><button id="send" type="button">Send Email</button><div id="review" hidden></div><button id="auth" type="button" hidden>Authorize Gmail Send</button><button id="reviewBtn" type="button" hidden>Review Email</button><h2>Mailer status</h2><div id="status" role="status">Ready. Select the HTML child runtime, then click Send Email.</div><script src="https://accounts.google.com/gsi/client" async defer></script><script>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OmegaONE Mailer — Hands-Free Trial V4</title><style>body{font:16px system-ui,Arial;background:#101c2c;color:#f4f7fb;max-width:760px;margin:30px auto;padding:0 18px}h1{font-size:1.55rem}label{display:block;margin:18px 0 6px;font-weight:600}input,textarea,button{font:inherit;box-sizing:border-box}input:not([type=file]),textarea{width:100%;padding:11px;background:#fff;color:#142033;border:1px solid #9baabd;border-radius:6px}textarea{min-height:105px}button{padding:11px 18px;margin:10px 8px 6px 0;border:0;border-radius:6px;background:#3668bc;color:#fff;cursor:pointer}button:disabled{opacity:.5;cursor:default}button.secondary{background:#44546b}.note{color:#bac9dc;font-size:.91rem;line-height:1.5}#status{white-space:pre-wrap;background:#1d3047;padding:14px;border-radius:6px;min-height:60px;overflow-wrap:anywhere}#review{background:#24374c;padding:14px;border-radius:6px;white-space:pre-wrap;overflow-wrap:anywhere}code{overflow-wrap:anywhere}</style></head><body><h1>OmegaONE Mailer — Send Child Lesson</h1><p class="note">Select the exported HTML child runtime and send it to your saved customer list in one Gmail message. Google sign-in appears only when required.</p><details id="advanced"><summary>Mailer account configuration (normally hidden)</summary><label for="client">Google OAuth Web Client ID</label><input id="client" autocomplete="off" placeholder="...apps.googleusercontent.com"><label for="sender">Your Gmail address (From and To)</label><input id="sender" type="email" placeholder="yourname@gmail.com"></details><p id="recipientsSummary" class="note" role="status">Customer recipients: checking saved list…</p><details id="recipientEditor"><summary>Edit customer BCC list</summary><label for="bcc">Customer distribution list — BCC (one email per line)</label><textarea id="bcc" spellcheck="false" placeholder="testrecipient1@example.com&#10;testrecipient2@example.com"></textarea><button class="secondary" id="save" type="button">Save customer list</button><p id="saveStatus" role="status" class="note">Settings not yet saved in this session.</p></details><p class="note">Customer addresses remain in this browser, not in the public GitHub repository. The attachment is selected anew for each send.</p><label for="file">HTML child runtime attachment</label><input id="file" type="file" accept=".html,.htm,text/html"><p class="note">Gmail's overall message size limit applies; MIME/Base64 increases the transmitted size.</p><button id="send" type="button">Send Email</button><div id="review" hidden></div><button id="auth" type="button" hidden>Authorize Gmail Send</button><button id="reviewBtn" type="button" hidden>Review Email</button><h2>Mailer status</h2><div id="status" role="status">Ready. Select the HTML child runtime, then click Send Email.</div><script src="https://accounts.google.com/gsi/client" async defer></script><script>
 (() => {
   'use strict';
   const $ = id => document.getElementById(id);
@@ -13,7 +13,7 @@
   const updateRecipientSummary = () => {
     const recipients = list();
     $('recipientsSummary').textContent = recipients.length
-      ? 'BCC recipients: ' + recipients.length + ' (maintained in LLMGold Admin; expand to edit here)'
+      ? 'BCC recipients: ' + recipients.length + ' (maintained in DistributionUtility; expand to edit here)'
       : 'No BCC recipients saved. Expand Edit customer BCC list to add them.';
   };
   const updateSendState = () => {
@@ -68,9 +68,9 @@
     if(done && ok) setTimeout(() => window.close(), 700);
   };
   if(adminMode){
-    const overlay=document.createElement('main'); overlay.id='adminOverlay'; overlay.style='position:fixed;inset:0;background:#101c2c;color:#fff;padding:24px;z-index:9999;font:16px system-ui'; overlay.innerHTML='<h2>Secure Gmail authorization</h2><p id="adminProgress">Connecting to LLMGold…</p><button id="adminAuthorize" type="button" hidden>Continue to Gmail</button>'; document.body.appendChild(overlay);
+    const overlay=document.createElement('main'); overlay.id='adminOverlay'; overlay.style='position:fixed;inset:0;background:#101c2c;color:#fff;padding:24px;z-index:9999;font:16px system-ui'; overlay.innerHTML='<h2>Secure Gmail authorization</h2><p id="adminProgress">Connecting to DistributionUtility…</p><button id="adminAuthorize" type="button" hidden>Continue to Gmail</button>'; document.body.appendChild(overlay);
   }
-  // Accept a customer list only from the LLMGold window that opened this page.
+  // Accept a customer list only from the application window that opened this page.
   // Do not transfer OAuth tokens, client secrets or file contents between origins.
   window.addEventListener('message', event => {
     if (!window.opener || event.source !== window.opener) return;
@@ -79,7 +79,7 @@
     $('bcc').value = data.bcc;
     invalidate();
     $('save').click();
-    status('Customer list received from LLMGold Admin. Select an HTML child runtime and click Send Email.');
+    status('Customer list received from DistributionUtility. Select an HTML child runtime and click Send Email.');
   });
   window.addEventListener('message', async event => {
     if(!adminMode || !window.opener || event.source!==window.opener || !event.data || event.data.type!=='OmegaONE.Mailer.AdminSend.v2') return;
@@ -118,7 +118,7 @@
               if(r.error || !r.access_token){
                 started=false; authButton.disabled=false; authButton.hidden=false;
                 $('adminProgress').textContent='Google authorization is required.';
-                adminReport('Google authorization required. Continue in the secure window.',true,false);
+                adminReport('AUTHORIZATION ACTION REQUIRED: Continue in the secure mailer window.',false,false);
                 return;
               }
               accessToken=r.access_token;
@@ -126,18 +126,23 @@
               performSend();
             }
           });
+          // Attempt the grant once without an extra user click. If the browser
+          // blocks the Google popup, expose ONE explicit authorization action.
+          // Never infer failure from a short delay while a Google prompt is open.
           tokenClient.requestAccessToken({prompt:''});
-          // Browsers may silently block a popup initiated without a gesture.
           setTimeout(()=>{
             if(started && !sending && (!accessToken || Date.now()>=expires)){
-              started=false; authButton.disabled=false; authButton.hidden=false;
-              $('adminProgress').textContent='Continue to Gmail to authorize sending.';
+              started=false;
+              authButton.disabled=false;
+              authButton.hidden=false;
+              $('adminProgress').textContent='Google authorization needs your attention. Tap Continue to Gmail once.';
+              adminReport('AUTHORIZATION ACTION REQUIRED: Tap Continue to Gmail in the secure mailer window.',false,false);
             }
-          },2500);
+          },12000);
         }catch(e){
           started=false;authButton.disabled=false;authButton.hidden=false;
           $('adminProgress').textContent='Google authorization required.';
-          adminReport('Continue to Gmail in the secure window: '+e.message,true,false);
+          adminReport('AUTHORIZATION ACTION REQUIRED: Continue to Gmail in the secure mailer window: '+e.message,false,false);
         }
       };
       authButton.onclick=()=>{
@@ -145,6 +150,7 @@
         try{
           values(); started=true; authButton.disabled=true;
           $('adminProgress').textContent='Authorizing and sending…';
+          adminReport('Google authorization requested. Complete the Google prompt if displayed.',false,false);
           if(accessToken && Date.now()<expires) performSend();
           else authorizeThenSend();
         }catch(e){started=false;authButton.disabled=false;adminReport('SEND BLOCKED: '+e.message,false,true);}
